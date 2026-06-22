@@ -77,7 +77,7 @@ export default function Page() {
 
           {/* Main Title */}
           <h1 className="text-4xl sm:text-5xl lg:text-7xl font-black text-transparent bg-clip-text bg-gradient-to-r from-white via-slate-105 to-slate-400 leading-tight tracking-tight max-w-4xl mx-auto">
-            تفريق الصوت بأمان تام مع <span className="text-transparent bg-clip-text bg-gradient-to-r from-brand-500 via-brand-600 to-neonCyan text-glow-purple">very ai</span>
+            تفريغ الصوت بأمان تام مع <span className="text-transparent bg-clip-text bg-gradient-to-r from-brand-500 via-brand-600 to-neonCyan text-glow-purple">very ai</span>
           </h1>
 
           {/* Subtitle desc */}
@@ -112,11 +112,34 @@ export default function Page() {
             </div>
             <h3 className="font-bold text-sm text-slate-100">معالجة آمنة ومعزولة</h3>
             <p className="text-xs text-slate-400 leading-relaxed">
-              لن تغادر ملفاتك الصوتية أو تسجيلاتك جهازك أبداً. فك الترميز والتحليل والتفريع يتم بالكامل على معالجك لتفادي سرقة البيانات والخصوصية المحكمة.
+              لن تغادر ملفاتك الصوتية أو تسجيلاتك جهازك أبداً. فك الترميز والتحليل والتفريغ يتم بالكامل على معالجك لتفادي سرقة البيانات والخصوصية المحكمة.
             </p>
           </div>
 
           {/* Block 2 */}
           <div className="glass-panel p-6 rounded-2xl space-y-3 border border-slate-800">
             <div className="h-12 w-12 rounded-xl bg-neonCyan/10 flex items-center justify-center text-neonCyan border border-neonCyan/20">
-              <Zap className=
+              <Zap className="h-5 w-5" />
+            </div>
+            <h3 className="font-bold text-sm text-slate-100">سرعة وأداء فوري</h3>
+            <p className="text-xs text-slate-400 leading-relaxed">
+              بفضل تقنيات WebAssembly الحديثة، يتم تحويل الصوت إلى نص بسرعة توازي الوقت الفعلي للمقطع، مع دعم كامل للتشغيل المباشر داخل المتصفح.
+            </p>
+          </div>
+
+          {/* Block 3 */}
+          <div className="glass-panel p-6 rounded-2xl space-y-3 border border-slate-800">
+            <div className="h-12 w-12 rounded-xl bg-goldAccent/10 flex items-center justify-center text-goldAccent border border-goldAccent/20">
+              <Sparkles className="h-5 w-5" />
+            </div>
+            <h3 className="font-bold text-sm text-slate-100">تصدير قياسي SRT</h3>
+            <p className="text-xs text-slate-400 leading-relaxed">
+              قم بتوليد ملفات الترجمة المتوافقة مع جميع منصات المونتاج والفيديو بضغطة زر واحدة، مع الحفاظ على التزامن الزمني الدقيق.
+            </p>
+          </div>
+
+        </div>
+      </div>
+    </main>
+  );
+}
