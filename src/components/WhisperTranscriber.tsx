@@ -453,5 +453,315 @@ export default function WhisperTranscriber() {
                     <span className="text-[10px] text-slate-400 mt-1.5 leading-tight">سرعة خاطفة (75 ميجابايت)</span>
                   </button>
 
+                  "button"
+                    onClick={() => setSelectedModel('Xenova/whisper-base')}
+                    className={`p-3.5 rounded-xl border text-right transition-all flex flex-col justify-between ${
+                      selectedModel === 'Xenova/whisper-base'
+                        ? 'border-brand-500 bg-brand-500/20 text-white shadow-neon-glow'
+                        : 'border-slate-800 bg-slate-900/40 text-slate-400 hover:border-slate-700'
+                    }`}
+                  >
+                    <span className="font-bold text-xs text-white">Whisper Base</span>
+                    <span className="text-[10px] text-slate-400 mt-1.5 leading-tight">دقة أعلى (145 ميجابايت)</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Language & Task Select */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-bold text-slate-300 mb-2">اللغة المستهدفة</label>
+                  <select
+                    value={selectedLanguage}
+                    onChange={(e) => setSelectedLanguage(e.target.value)}
+                    className="w-full p-2.5 bg-slate-900 border border-slate-800 rounded-xl text-xs text-slate-200 focus:border-brand-500 outline-none"
+                  >
+                    <option value="ar">العربية (ar)</option>
+                    <option value="en">الإنجليزية (en)</option>
+                    <option value="auto">كشف تلقائي</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-300 mb-2">نوع المهمة</label>
+                  <select
+                    value={selectedTask}
+                    onChange={(e) => setSelectedTask(e.target.value as any)}
+                    className="w-full p-2.5 bg-slate-900 border border-slate-800 rounded-xl text-xs text-slate-200 focus:border-brand-500 outline-none"
+                  >
+                    <option value="transcribe">تفريغ نصي</option>
+                    <option value="translate">ترجمة إلى الإنجليزية</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Action Tabs: Upload / Record */}
+              <div className="border-t border-slate-800 pt-4">
+                <div className="flex bg-slate-950 p-1 rounded-xl border border-slate-800 mb-4">
                   <button
-                    type=
+                    type="button"
+                    onClick={() => setActiveTab('upload')}
+                    className={`flex-1 py-2 text-xs font-bold rounded-lg flex items-center justify-center gap-2 transition-all ${
+                      activeTab === 'upload' ? 'bg-slate-900 text-white shadow' : 'text-slate-400 hover:text-slate-200'
+                    }`}
+                  >
+                    <UploadCloud className="h-3.5 w-3.5" />
+                    رفع ملف صوتي
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab('record')}
+                    className={`flex-1 py-2 text-xs font-bold rounded-lg flex items-center justify-center gap-2 transition-all ${
+                      activeTab === 'record' ? 'bg-slate-900 text-white shadow' : 'text-slate-400 hover:text-slate-200'
+                    }`}
+                  >
+                    <Mic className="h-3.5 w-3.5" />
+                    تسجيل حي
+                  </button>
+                </div>
+
+                {activeTab === 'upload' ? (
+                  <div
+                    onDragOver={(e) => e.preventDefault()}
+                    onDrop={handleFileDrop}
+                    className="border-2 border-dashed border-slate-800 hover:border-brand-500/50 rounded-2xl p-6 text-center cursor-pointer transition-all bg-slate-900/20"
+                  >
+                    <input
+                      type="file"
+                      accept="audio/*"
+                      onChange={handleFileChange}
+                      className="hidden"
+                      id="audio-uploader"
+                    />
+                    <label htmlFor="audio-uploader" className="cursor-pointer space-y-2 block">
+                      <FileAudio className="h-8 w-8 mx-auto text-slate-500" />
+                      <p className="text-xs text-slate-300 font-medium">اسحب الملف الصوتي هنا أو تصفح جهازك</p>
+                      <p className="text-[10px] text-slate-500">MP3, WAV, M4A مدعومة محلياً</p>
+                    </label>
+                  </div>
+                ) : (
+                  <div className="bg-slate-900/40 border border-slate-800 rounded-2xl p-4 text-center space-y-3">
+                    {isRecording ? (
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-center gap-2">
+                          <span className="w-2.5 h-2.5 bg-red-500 rounded-full animate-ping" />
+                          <span className="text-xs font-mono text-red-400">جاري التسجيل: {recordingSeconds} ثانية</span>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={stopRecording}
+                          className="mx-auto p-3 bg-red-500/20 text-red-400 hover:bg-red-500/30 border border-red-500/30 rounded-full transition-all"
+                        >
+                          <Square className="h-4 w-4" />
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="space-y-2">
+                        <p className="text-xs text-slate-400">جاهز للتسجيل من الميكروفون المباشر</p>
+                        <button
+                          type="button"
+                          onClick={startRecording}
+                          className="mx-auto p-3 bg-brand-500/20 text-brand-400 hover:bg-brand-500/30 border border-brand-500/30 rounded-full transition-all"
+                        >
+                          <Mic className="h-4 w-4" />
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {/* Loaded File Info & Run Action */}
+              {audioFile && (
+                <div className="bg-slate-950 p-3 rounded-xl border border-slate-800 flex items-center justify-between">
+                  <div className="flex items-center gap-2 overflow-hidden">
+                    <AudioLines className="h-4 w-4 text-brand-400 shrink-0" />
+                    <span className="text-xs text-slate-300 truncate font-mono">{audioFile.name}</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={clearAudio}
+                    className="p-1.5 text-slate-500 hover:text-red-400 transition-colors"
+                    title="حذف الملف"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </button>
+                </div>
+              )}
+
+              <button
+                type="button"
+                onClick={runTranscription}
+                disabled={!audioFile || isProcessing}
+                className="w-full py-3 bg-gradient-to-r from-brand-600 to-cyan-600 hover:from-brand-500 hover:to-cyan-500 disabled:from-slate-800 disabled:to-slate-800 text-white text-xs font-bold rounded-xl transition-all shadow-md flex items-center justify-center gap-2"
+              >
+                {isProcessing ? (
+                  <>
+                    <Cpu className="h-4 w-4 animate-spin" />
+                    جاري المعالجة الحية...
+                  </>
+                ) : (
+                  <>
+                    <Terminal className="h-4 w-4" />
+                    بدء المعالجة واستخراج النصوص
+                  </>
+                )}
+              </button>
+
+              {/* Playground Simulator Demo Button */}
+              <button
+                type="button"
+                onClick={handleLoadDemoPlayground}
+                disabled={isProcessing}
+                className="w-full py-2 bg-slate-950 hover:bg-slate-900 border border-slate-800 text-slate-400 hover:text-slate-200 text-[11px] font-medium rounded-xl transition-all flex items-center justify-center gap-1.5"
+              >
+                <Sparkles className="h-3 w-3 text-amber-400" />
+                تشغيل محاكاة تجريبية سريعة (بدون تحميل أوزان)
+              </button>
+            </div>
+          </div>
+
+          {/* Monitoring Status & Progress */}
+          <div className="glass-panel rounded-3xl p-5 border border-slate-800 bg-slate-900/20 space-y-3">
+            <div className="flex items-center gap-2 text-slate-300 text-xs font-bold">
+              <Info className="h-3.5 w-3.5 text-cyan-400" />
+              <span>مراقب الحالة والمحرك المحلي</span>
+            </div>
+            <p className="text-[11px] text-slate-400 leading-relaxed font-sans">{statusText}</p>
+            
+            {modelLoadingProgress > 0 && (
+              <div className="w-full bg-slate-950 rounded-full h-1.5 border border-slate-900 overflow-hidden">
+                <div 
+                  className="bg-gradient-to-r from-brand-500 to-neonCyan h-full transition-all duration-300"
+                  style={{ width: `${modelLoadingProgress}%` }}
+                />
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Output & Subtitles Area Column (Right) */}
+        <div className="lg:col-span-7 space-y-6">
+          {audioUrl && (
+            <div className="glass-panel rounded-3xl p-4 bg-slate-950 border border-slate-800 flex items-center gap-4">
+              <audio ref={audioPlayerRef} src={audioUrl} className="hidden" />
+              <button
+                type="button"
+                onClick={togglePlayback}
+                className="p-3 bg-brand-500/10 text-brand-400 border border-brand-500/20 rounded-xl hover:bg-brand-500/20 transition-all"
+              >
+                {isPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
+              </button>
+              
+              <div className="flex-1 h-8 overflow-hidden rounded-lg bg-slate-900/40 border border-slate-900 flex items-center justify-center">
+                <AudioVisualizer isPlaying={isPlaying} />
+              </div>
+            </div>
+          )}
+
+          {/* Results Workspace */}
+          <div className="glass-panel rounded-3xl p-6 border border-slate-800 bg-slate-900/20 space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800 pb-4">
+              <div className="flex items-center gap-2">
+                <FileText className="h-4 w-4 text-brand-400" />
+                <h3 className="font-bold text-sm text-slate-200">النتائج والتفريغ الزمني</h3>
+              </div>
+              
+              <div className="relative">
+                <Search className="absolute right-2.5 top-2.5 h-3.5 w-3.5 text-slate-500" />
+                <input
+                  type="text"
+                  placeholder="تصفية كلمات معينة..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="bg-slate-950 border border-slate-800 rounded-xl pr-8 pl-3 py-1.5 text-xs text-slate-300 focus:border-brand-500 outline-none w-full sm:w-48 font-sans"
+                />
+              </div>
+            </div>
+
+            {/* Subtitles Segments List */}
+            <div className="space-y-2 max-h-[320px] overflow-y-auto pr-1 scrollbar-thin">
+              {filteredSegments.length > 0 ? (
+                filteredSegments.map((segment, idx) => {
+                  const isCurrent = currentPlaybackTime >= segment.start && currentPlaybackTime <= segment.end;
+                  return (
+                    <div
+                      key={idx}
+                      onClick={() => jumpToAudioTimestamp(segment.start)}
+                      className={`p-3 rounded-xl border text-right transition-all cursor-pointer ${
+                        isCurrent 
+                          ? 'bg-brand-500/10 border-brand-500/40 shadow-sm' 
+                          : 'bg-slate-900/30 border-slate-800/60 hover:bg-slate-900/60'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between mb-1.5">
+                        <span className="text-[10px] font-mono text-cyan-400 bg-cyan-950/40 px-2 py-0.5 rounded border border-cyan-900/30">
+                          {segment.start.toFixed(2)}s - {segment.end.toFixed(2)}s
+                        </span>
+                        {isCurrent && <Volume2 className="h-3 w-3 text-brand-400 animate-pulse" />}
+                      </div>
+                      <p className="text-xs text-slate-200 leading-relaxed font-sans">{segment.text}</p>
+                    </div>
+                  );
+                })
+              ) : (
+                <div className="text-center py-12 text-slate-500 text-xs">
+                  لا توجد سطور مفرغة حالياً. قم ببدء المعالجة لاستعراض البيانات.
+                </div>
+              )}
+            </div>
+
+            {/* Export Toolbar */}
+            {fullText && (
+              <div className="border-t border-slate-800 pt-4 space-y-4">
+                <div className="bg-slate-950 p-3 rounded-xl border border-slate-900">
+                  <p className="text-xs text-slate-300 font-sans leading-relaxed max-h-24 overflow-y-auto">{fullText}</p>
+                </div>
+                <div className="grid grid-cols-3 gap-2.5">
+                  <button
+                    type="button"
+                    onClick={handleCopyToClipboard}
+                    className="py-2.5 bg-slate-900 hover:bg-slate-800 border border-slate-800 rounded-xl text-xs text-slate-300 font-bold transition-all flex items-center justify-center gap-1.5"
+                  >
+                    {isCopied ? <Check className="h-3.5 w-3.5 text-emerald-400" /> : <Copy className="h-3.5 w-3.5" />}
+                    {isCopied ? 'تم النسخ!' : 'نسخ النص'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={downloadAsTXT}
+                    className="py-2.5 bg-slate-900 hover:bg-slate-800 border border-slate-800 rounded-xl text-xs text-slate-300 font-bold transition-all flex items-center justify-center gap-1.5"
+                  >
+                    <Download className="h-3.5 w-3.5" />
+                    تصدير TXT
+                  </button>
+                  <button
+                    type="button"
+                    onClick={downloadAsSRT}
+                    className="py-2.5 bg-slate-900 hover:bg-slate-800 border border-slate-800 rounded-xl text-xs text-slate-300 font-bold transition-all flex items-center justify-center gap-1.5"
+                  >
+                    <Download className="h-3.5 w-3.5 text-cyan-400" />
+                    تصدير SRT
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* System Console Logs Panel */}
+          <div className="glass-panel rounded-3xl p-4 bg-slate-950 border border-slate-900 space-y-2">
+            <div className="flex items-center gap-1.5 text-slate-400 text-[11px] font-bold">
+              <Terminal className="h-3 w-3 text-slate-500" />
+              <span>سجل العمليات الفوري لحزمة Transformers</span>
+            </div>
+            <div className="bg-slate-900/30 p-2.5 rounded-xl max-h-24 overflow-y-auto font-mono text-[10px] text-slate-500 space-y-1 text-right direction-rtl">
+              {executionLog.map((log, i) => (
+                <div key={i} className="truncate">{log}</div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  );
+}
