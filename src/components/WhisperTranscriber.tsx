@@ -14,14 +14,17 @@ import {
   Trash2,
   Cpu,
   Languages,
-  HelpCircle,
-  Search,
   Sparkles,
-  AlertCircle,
+  Search,
   Volume2,
   Terminal,
-  ArrowRightLeft,
-  Layers
+  FileText,
+  Info,
+  HelpCircle,
+  FileAudio,
+  CheckCircle2,
+  AlertCircle,
+  AudioLines
 } from 'lucide-react';
 import AudioVisualizer from './AudioVisualizer';
 import { getAudioChannelData, formatTimestamp, generateSRT } from '../utils/audioHelper';
@@ -37,7 +40,7 @@ interface Segment {
 }
 
 export default function WhisperTranscriber() {
-  // File & Recording States
+  // Input state
   const [audioFile, setAudioFile] = useState<File | null>(null);
   const [audioUrl, setAudioUrl] = useState<string>('');
   const [isRecording, setIsRecording] = useState(false);
@@ -45,32 +48,40 @@ export default function WhisperTranscriber() {
   const [recordedStream, setRecordedStream] = useState<MediaStream | null>(null);
   const [recordingSeconds, setRecordingSeconds] = useState(0);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const [activeTab, setActiveTab] = useState<'upload' | 'record'>('upload');
 
-  // Audio Player State
+  // Playback state
   const audioPlayerRef = useRef<HTMLAudioElement | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentPlaybackTime, setCurrentPlaybackTime] = useState(0);
 
-  // Model Settings & Execution State
+  // AI Model configurations
   const [selectedModel, setSelectedModel] = useState<ModelName>('Xenova/whisper-tiny');
   const [selectedLanguage, setSelectedLanguage] = useState<string>('ar');
   const [selectedTask, setSelectedTask] = useState<TaskType>('transcribe');
   
-  const [statusText, setStatusText] = useState<string>('جاهز للتشغيل - Ready');
+  // Logs & Status monitoring
+  const [statusText, setStatusText] = useState<string>('مرحباً بك في very ai. قم برفع ملف صوتي أو استخدم الميكروفون المباشر لبدء التفريغ الصوتي المحلي الآمن كلياً.');
   const [modelLoadingProgress, setModelLoadingProgress] = useState<number>(0);
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
   const [transcriptionTime, setTranscriptionTime] = useState<number | null>(null);
+  const [executionLog, setExecutionLog] = useState<string[]>(['[نظام] تم تشغيل المحرك بنجاح 100% محلياً.']);
   
-  // Output States
+  // Subtitles & Outputs
   const [transcriptSegments, setTranscriptSegments] = useState<Segment[]>([]);
   const [fullText, setFullText] = useState<string>('');
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [isCopied, setIsCopied] = useState(false);
   
-  // Pipeline Cache
+  // Model instance storage
   const pipelineRef = useRef<any>(null);
 
-  // Handle timer for recording
+  const addLog = (message: string) => {
+    const time = new Date().toLocaleTimeString('ar-EG', { hour12: false });
+    setExecutionLog(prev => [`[${time}] ${message}`, ...prev]);
+  };
+
+  // Track record duration
   useEffect(() => {
     if (isRecording) {
       timerRef.current = setInterval(() => {
@@ -88,7 +99,7 @@ export default function WhisperTranscriber() {
     };
   }, [isRecording]);
 
-  // Track audio player current position to highlight matching segment
+  // Sync playback pointer for highlighting current sentence
   useEffect(() => {
     const player = audioPlayerRef.current;
     if (!player) return;
@@ -103,34 +114,39 @@ export default function WhisperTranscriber() {
     };
   }, [audioUrl]);
 
-  // Load premium simulation sample for demo instantly
-  const loadDemoSample = async () => {
-    setStatusText('جاري تحضير ملف عينة تجريبي فوري...');
-    try {
-      const response = await fetch('https://ia800204.us.archive.org/11/items/hamlet_0911_librivox/hamlet_act1_shakespeare_64kb.mp3');
-      if (!response.ok) throw new Error();
-      const blob = await response.blob();
-      const demoFile = new File([blob], 'shakespeare_hamlet_demo.mp3', { type: 'audio/mp3' });
-      loadAudioFile(demoFile);
-      setStatusText('تم تحميل العينة التجريبية بنجاح! اضغط على تفريغ الصوت.');
-    } catch (e) {
-      // Fallback local generated mock file for immediate feedback
-      const sampleParts = [new Uint8Array([0,1,2,3,4,5])];
-      const mockFile = new File(sampleParts, 'very_demo_sample.mp3', { type: 'audio/mp3' });
-      loadAudioFile(mockFile);
-      
-      // Pre-fill premium demo transcription
-      setTranscriptSegments([
-        { start: 0, end: 4, text: "مرحباً بك في منصة VERY للتفريغ الذكي فائق الدقة." },
-        { start: 4, end: 9, text: "النموذج يعمل الآن مباشرة على معالج جهازك وبسرية تامة 100%." },
-        { start: 9, end: 14, text: "يمكنك استخراج ملفات ترجمة متزامنة بدقة متناهية وبدون قيود." }
-      ]);
-      setFullText("مرحباً بك في منصة VERY للتفريغ الذكي فائق الدقة. النموذج يعمل الآن مباشرة على معالج جهازك وبسرية تامة 100%. يمكنك استخراج ملفات ترجمة متزامنة بدقة متناهية وبدون قيود.");
-      setStatusText('تم تفعيل وضع المعاينة التجريبية الفوري للتطبيق بنجاح!');
-    }
+  // Launch quick Demo simulator for immediate engagement without heavy model weights downloads
+  const handleLoadDemoPlayground = () => {
+    addLog('تفعيل عينة المحاكاة التجريبية الفورية...');
+    setStatusText('تم تحميل العينة التوضيحية بنجاح. تذوق أداء very ai فوري!');
+    
+    const demoData = [
+      { start: 0, end: 4.2, text: "مرحباً بكم في عصر الذكاء الاصطناعي الصديق للخصوصية مع منصة very ai." },
+      { start: 4.2, end: 9.5, text: "يقوم تطبيق very ai بتفكيك وتحليل المقاطع الصوتية بالكامل داخل المتصفح وبدون أي اشتراك." },
+      { start: 9.5, end: 14.8, text: "يمكنكم تعديل النصوص المصدرة، تصفيتها، وتصديرها كملفات ترجمة SRT متزامنة فوراً." },
+      { start: 14.8, end: 20.0, text: "احموا سرية اجتماعاتكم ومقابلاتكم الصحفية عبر المعالجة المحلية على جهازكم مباشرة!" }
+    ];
+
+    const mockParts = [new Uint8Array([0, 10, 20, 30])];
+    const sampleFile = new File(mockParts, 'very_ai_premium_demo.mp3', { type: 'audio/mp3' });
+    
+    setAudioFile(sampleFile);
+    setAudioUrl(''); 
+    setTranscriptSegments(demoData);
+    const computedText = demoData.map(d => d.text).join(' ');
+    setFullText(computedText);
+    setTranscriptionTime(2);
+    
+    addLog('تم ملء بيانات العينة واستخراج ملف SRT تفاعلي فوري.');
+    
+    confetti({
+      particleCount: 80,
+      spread: 70,
+      origin: { y: 0.6 },
+      colors: ['#7c3aed', '#06b6d4', '#f59e0b']
+    });
   };
 
-  // Handle drag/drop & File selection
+  // Handle drag selection
   const handleFileDrop = (e: React.DragEvent) => {
     e.preventDefault();
     const file = e.dataTransfer.files[0];
@@ -153,10 +169,13 @@ export default function WhisperTranscriber() {
     setTranscriptSegments([]);
     setFullText('');
     setTranscriptionTime(null);
+    setStatusText(`تم إرفاق الملف الصوتي: ${file.name}. جاهز للتحليل.`);
+    addLog(`تم تحميل ملف خارجي: ${file.name} بقيمة ${(file.size / (1024 * 1024)).toFixed(2)} ميجابايت.`);
   };
 
-  // Microphone recording management
+  // Mic Recording Actions
   const startRecording = async () => {
+    addLog('طلب صلاحيات الوصول إلى الميكروفون...');
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       setRecordedStream(stream);
@@ -169,9 +188,10 @@ export default function WhisperTranscriber() {
 
       recorder.onstop = () => {
         const audioBlob = new Blob(chunks, { type: 'audio/wav' });
-        const file = new File([audioBlob], 'تسجيل_مباشر_فيري.wav', { type: 'audio/wav' });
+        const file = new File([audioBlob], 'تسجيل_صوتي_مباشر_very_ai.wav', { type: 'audio/wav' });
         loadAudioFile(file);
         stream.getTracks().forEach(track => track.stop());
+        addLog('تم إنهاء التسجيل وتحويل المسار الصوتي بنجاح.');
       };
 
       recorder.start();
@@ -179,8 +199,10 @@ export default function WhisperTranscriber() {
       setIsRecording(true);
       setTranscriptSegments([]);
       setFullText('');
+      addLog('الميكروفون قيد التسجيل الآن... تحدث بصوت واضح.');
     } catch (err) {
-      alert('يرجى السماح بصلاحية الميكروفون للبدء بالتسجيل.');
+      addLog('فشل الوصول للميكروفون. يرجى تأكيد منح الإذن للمتصفح.');
+      alert('يرجى السماح بصلاحية الميكروفون للبدء بالتسجيل الحي.');
     }
   };
 
@@ -201,18 +223,21 @@ export default function WhisperTranscriber() {
       audioPlayerRef.current.pause();
     }
     setIsPlaying(false);
+    setStatusText('تم إفراغ الملف الحالي.');
+    addLog('تم تنظيف مساحة العمل وعزل الملف النشط.');
   };
 
-  // Dynamic Model Initialization
+  // Main AI Inference Core
   const getPipelineInstance = async (model: ModelName, progressCallback: (data: any) => void) => {
     const { pipeline, env } = await import('@xenova/transformers');
     env.allowLocalModels = false;
     
     if (pipelineRef.current && pipelineRef.current.modelName === model) {
+      addLog('تم العثور على حزمة النموذج مخزنة مسبقاً في ذاكرة الرام.');
       return pipelineRef.current.instance;
     }
 
-    setStatusText('جاري تنزيل ملفات ذكاء Very AI من الخادم للمتصفح...');
+    addLog(`بدء تحميل ملفات أوزان الذكاء الاصطناعي (${model}) من خوادم HuggingFace إلى جهازك لأول مرة...`);
     const instance = await pipeline('automatic-speech-recognition', model, { 
       progress_callback: progressCallback,
     });
@@ -227,31 +252,34 @@ export default function WhisperTranscriber() {
     setIsProcessing(true);
     setTranscriptionTime(null);
     const startTime = performance.now();
+    addLog('جاري فك تشفير الصوت وتقليله لأحادية القناة بـ 16,000 هرتز...');
 
     try {
-      setStatusText('تحليل الترددات وتهيئة ملف الصوت (16,000 هرتز)...');
       const processedAudio = await getAudioChannelData(audioFile);
+      addLog('تم تجهيز مصفوفة الصوت (Float32Array) بنجاح. استدعاء نموذج Whisper...');
 
       const whisperPipeline = await getPipelineInstance(selectedModel, (progressData: any) => {
         if (progressData.status === 'progress') {
-          setModelLoadingProgress(Math.round(progressData.progress));
-          setStatusText(`جاري تهيئة كتل النموذج: ${Math.round(progressData.progress)}%`);
+          const progress = Math.round(progressData.progress);
+          setModelLoadingProgress(progress);
+          setStatusText(`جاري تهيئة كتل الذكاء الاصطناعي: ${progress}%`);
         } else if (progressData.status === 'ready') {
           setModelLoadingProgress(100);
-          setStatusText('النموذج جاهز في ذاكرة المتصفح النشطة. يبدأ التفريغ الآن...');
+          setStatusText('النموذج مستقر وجاهز في الرام. بدء معالجة النص والتفريع الصوتي...');
         }
       });
 
-      setStatusText('الذكاء الاصطناعي يقوم بالتفريغ الصوتي الآن... يرجى عدم إغلاق هذه الصفحة.');
+      addLog('النموذج نشط بالكامل. بدء المعالجة العميقة واستخلاص النبرات...');
       
-      // Run on-device inference
-      const result = await whisperPipeline(processedAudio, {
+      const result = await whisperPipeline(processedAudio, { 
         chunk_length_s: 30,
         stride_length_s: 5,
         return_timestamps: true,
         language: selectedLanguage === 'auto' ? null : selectedLanguage,
         task: selectedTask,
       });
+
+      addLog('اكتملت المعالجة العميقة. جاري فرز الجمل والمقاطع الزمنية...');
 
       if (result && result.chunks) {
         const formattedSegments: Segment[] = result.chunks.map((chunk: any) => ({
@@ -262,24 +290,28 @@ export default function WhisperTranscriber() {
         setTranscriptSegments(formattedSegments);
         setFullText(result.text || '');
       } else {
-        setFullText(result.text || '');
-        setTranscriptSegments([{ start: 0, end: 5, text: result.text || '' }]);
+        const fallbackText = result.text || '';
+        setFullText(fallbackText);
+        setTranscriptSegments([{ start: 0, end: 5, text: fallbackText }]);
       }
 
       const endTime = performance.now();
-      setTranscriptionTime(Math.round((endTime - startTime) / 1000));
-      setStatusText('تم تفريغ الصوت بنجاح فائق!');
+      const diffSeconds = Math.round((endTime - startTime) / 1000);
+      setTranscriptionTime(diffSeconds);
+      setStatusText('تم الانتهاء بنجاح باهر! النص والترجمة متوفران للتصدير.');
+      addLog(`تم التفريغ الصوتي بنجاح تام في زمن قدره ${diffSeconds} ثواني.`);
       
       confetti({
-        particleCount: 150,
-        spread: 80,
-        origin: { y: 0.6 },
-        colors: ['#8b5cf6', '#06b6d4', '#10b981']
+        particleCount: 120,
+        spread: 90,
+        origin: { y: 0.7 },
+        colors: ['#7c3aed', '#06b6d4', '#10b981']
       });
 
     } catch (error: any) {
       console.error(error);
-      setStatusText(`عذراً، حدث خطأ أثناء المعالجة: ${error.message || 'يرجى تجربة ملف آخر'}`);
+      addLog(`[خطأ تقني] فشل تفريغ الصوت: ${error.message || 'خطأ مجهول'}`);
+      setStatusText('عذراً، تعذر إتمام العملية. جرب ملفاً أصغر أو تأكد من إعدادات المتصفح.');
     } finally {
       setIsProcessing(false);
       setModelLoadingProgress(0);
@@ -289,7 +321,8 @@ export default function WhisperTranscriber() {
   const handleCopyToClipboard = () => {
     navigator.clipboard.writeText(fullText);
     setIsCopied(true);
-    setTimeout(() => setIsCopied(false), 2000);
+    addLog('تم نسخ النص الكامل إلى الحافظة بنجاح.');
+    setTimeout(() => setIsCopied(false), 2500);
   };
 
   const downloadAsTXT = () => {
@@ -297,8 +330,9 @@ export default function WhisperTranscriber() {
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.download = `${audioFile?.name || 'very_transcript'}.txt`;
+    link.download = `very_ai_${audioFile?.name || 'transcription'}.txt`;
     link.click();
+    addLog('تم تصدير ملف النص العادي بنجاح.');
   };
 
   const downloadAsSRT = () => {
@@ -307,8 +341,9 @@ export default function WhisperTranscriber() {
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.download = `${audioFile?.name || 'very_transcript'}.srt`;
+    link.download = `very_ai_${audioFile?.name || 'transcription'}.srt`;
     link.click();
+    addLog('تم تصدير ملف الترجمة المتزامن SRT بنجاح.');
   };
 
   const togglePlayback = () => {
@@ -316,7 +351,7 @@ export default function WhisperTranscriber() {
       if (isPlaying) {
         audioPlayerRef.current.pause();
       } else {
-        audioPlayerRef.current.play();
+        audioPlayerRef.current.play().catch(() => {});
       }
       setIsPlaying(!isPlaying);
     }
@@ -325,8 +360,9 @@ export default function WhisperTranscriber() {
   const jumpToAudioTimestamp = (seconds: number) => {
     if (audioPlayerRef.current) {
       audioPlayerRef.current.currentTime = seconds;
-      audioPlayerRef.current.play();
+      audioPlayerRef.current.play().catch(() => {});
       setIsPlaying(true);
+      addLog(`الانتقال في الخط الزمني إلى: ${formatTimestamp(seconds)}`);
     }
   };
 
@@ -336,54 +372,86 @@ export default function WhisperTranscriber() {
 
   return (
     <div className="space-y-8">
-      {/* Dashboard Top Indicators */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-        <div className="bg-gradient-to-br from-darkCard to-brand-900/10 border border-brand-500/20 rounded-2xl p-5 flex items-start gap-4 shadow-neon-glow">
-          <div className="p-3 bg-brand-500/10 rounded-xl text-brand-400 border border-brand-500/20">
-            <Cpu className="h-6 w-6" />
+      
+      {/* Top Indicators Box */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="gradient-border-card p-6 flex items-start gap-4 shadow-neon-glow transition-transform hover:-translate-y-1 duration-300">
+          <div className="p-3 bg-brand-500/20 rounded-2xl text-brand-400 border border-brand-500/30">
+            <Cpu className="h-6 w-6 text-glow-purple" />
           </div>
           <div>
-            <h4 className="font-bold text-sm text-brand-300">حوسبة متكاملة في المتصفح</h4>
-            <p className="text-xs text-slate-400 mt-1.5 leading-relaxed">
-              تجري معالجة البيانات بالكامل محلياً على جهازك لخصوصية مطلقة دون إرسالها لأي خادم.
+            <h4 className="font-bold text-sm text-slate-100">خصوصية قصوى وآمنة</h4>
+            <p className="text-xs text-slate-400 mt-2 leading-relaxed">
+              تتم المعالجة بنسبة 100% داخل المتصفح. لا يتم إرسال أي صوت أو نصوص إلى خوادم خارجية.
             </p>
           </div>
         </div>
 
-        <div className="bg-gradient-to-br from-darkCard to-neonCyan/10 border border-neonCyan/20 rounded-2xl p-5 flex items-start gap-4 shadow-cyan-glow">
-          <div className="p-3 bg-neonCyan/10 rounded-xl text-neonCyan border border-neonCyan/20">
-            <Sparkles className="h-6 w-6" />
+        <div className="gradient-border-card p-6 flex items-start gap-4 shadow-cyan-glow transition-transform hover:-translate-y-1 duration-300">
+          <div className="p-3 bg-neonCyan/20 rounded-2xl text-neonCyan border border-neonCyan/30">
+            <Sparkles className="h-6 w-6 text-glow-cyan" />
           </div>
           <div>
-            <h4 className="font-bold text-sm text-cyan-300">توليد تلقائي للترجمة SRT</h4>
-            <p className="text-xs text-slate-400 mt-1.5 leading-relaxed">
-              استخرج ملفات ترجمة احترافية مخصصة لليوتيوب، ريلز وبرامج المونتاج بنقرة زر واحدة.
+            <h4 className="font-bold text-sm text-slate-100">أدوات تصدير مرنة</h4>
+            <p className="text-xs text-slate-400 mt-2 leading-relaxed">
+              تصدير فوري بنقرة واحدة لملفات الترجمة SRT متناهية الدقة المتوافقة مع يوتيوب وكاب كات.
             </p>
           </div>
         </div>
 
-        <div className="bg-gradient-to-br from-darkCard to-neonTeal/10 border border-slate-800 rounded-2xl p-5 flex items-start gap-4">
-          <div className="p-3 bg-neonTeal/10 rounded-xl text-neonTeal border border-neonTeal/20">
+        <div className="gradient-border-card p-6 flex items-start gap-4 transition-transform hover:-translate-y-1 duration-300">
+          <div className="p-3 bg-emerald-500/20 rounded-2xl text-emerald-400 border border-emerald-500/30">
             <Languages className="h-6 w-6" />
           </div>
           <div>
-            <h4 className="font-bold text-sm text-teal-300">متعدد اللغات + ترجمة فورية</h4>
-            <p className="text-xs text-slate-400 mt-1.5 leading-relaxed">
-              تعرف فوري على اللغة العربية ولهجاتها مع إمكانية تحويل الصوت إلى نص إنجليزي مباشرة.
+            <h4 className="font-bold text-sm text-slate-100">متعدد اللغات + ترجمة</h4>
+            <p className="text-xs text-slate-400 mt-2 leading-relaxed">
+              كشف فوري وذكي للغة العربية بلهجاتها المختلفة، مع خيار الترجمة الفورية للغة الإنجليزية.
             </p>
           </div>
         </div>
       </div>
 
-      {/* Main Core Area - Two Columns */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+      {/* Main Workspace Layout: Options & Output */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
         
-        {/* Inputs & Settings Panel (Left Column) */}
+        {/* Configuration Column (Left) */}
         <div className="lg:col-span-5 space-y-6">
           
-          {/* Custom Settings Configurator */}
-          <div className="bg-darkCard/80 backdrop-blur-md border border-slate-800 rounded-3xl p-6 space-y-5 shadow-lg relative overflow-hidden">
-            <div className="absolute top-0 right-0 w-24 h-24 bg-brand-600/5 rounded-full blur-2xl pointer-events-none" />
-            <div className="flex items-center justify-between border-b border-slate-800/80 pb-4">
+          {/* AI Engines Panel */}
+          <div className="glass-panel rounded-3xl p-6 space-y-5 relative overflow-hidden shadow-glass-glow">
+            <div className="absolute top-0 left-0 w-32 h-32 bg-brand-500/10 rounded-full blur-3xl pointer-events-none" />
+            <div className="absolute bottom-0 right-0 w-24 h-24 bg-neonCyan/10 rounded-full blur-2xl pointer-events-none" />
+            
+            <div className="flex items-center justify-between border-b border-slate-800 pb-4">
               <div className="flex items-center gap-2.5">
-                <Settings className=
+                <Settings className="h-5 w-5 text-brand-400" />
+                <h3 className="font-extrabold text-sm text-slate-200">إعدادات محرك Whisper</h3>
+              </div>
+              <span className="text-[11px] font-bold text-brand-400 bg-brand-500/10 px-3 py-1 rounded-full border border-brand-500/20">
+                تفريغ محلي محمي
+              </span>
+            </div>
+
+            <div className="space-y-4">
+              {/* Model Select */}
+              <div>
+                <label className="block text-xs font-bold text-slate-300 mb-2.5">
+                  اختر حجم نموذج الذكاء الاصطناعي
+                </label>
+                <div className="grid grid-cols-2 gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setSelectedModel('Xenova/whisper-tiny')}
+                    className={`p-3.5 rounded-xl border text-right transition-all flex flex-col justify-between ${
+                      selectedModel === 'Xenova/whisper-tiny'
+                        ? 'border-brand-500 bg-brand-500/20 text-white shadow-neon-glow'
+                        : 'border-slate-800 bg-slate-900/40 text-slate-400 hover:border-slate-700'
+                    }`}
+                  >
+                    <span className="font-bold text-xs text-white">Whisper Tiny</span>
+                    <span className="text-[10px] text-slate-400 mt-1.5 leading-tight">سرعة خاطفة (75 ميجابايت)</span>
+                  </button>
+
+                  <button
+                    type=
