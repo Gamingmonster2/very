@@ -445,6 +445,12 @@ export default function WhisperTranscriber() {
                     onClick={() => setSelectedModel('Xenova/whisper-tiny')}
                     className={`p-3.5 rounded-xl border text-right transition-all flex flex-col justify-between ${
                       selectedModel === 'Xenova/whisper-tiny'
+        <div className="grid grid-cols-2 gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setSelectedModel('Xenova/whisper-tiny')}
+                    className={`p-3.5 rounded-xl border text-right transition-all flex flex-col justify-between ${
+                      selectedModel === 'Xenova/whisper-tiny'
                         ? 'border-brand-500 bg-brand-500/20 text-white shadow-neon-glow'
                         : 'border-slate-800 bg-slate-900/40 text-slate-400 hover:border-slate-700'
                     }`}
@@ -453,19 +459,19 @@ export default function WhisperTranscriber() {
                     <span className="text-[10px] text-slate-400 mt-1.5 leading-tight">سرعة خاطفة (75 ميجابايت)</span>
                   </button>
 
-                  "button"
+                  <button
+                    type="button"
                     onClick={() => setSelectedModel('Xenova/whisper-base')}
                     className={`p-3.5 rounded-xl border text-right transition-all flex flex-col justify-between ${
                       selectedModel === 'Xenova/whisper-base'
                         ? 'border-brand-500 bg-brand-500/20 text-white shadow-neon-glow'
                         : 'border-slate-800 bg-slate-900/40 text-slate-400 hover:border-slate-700'
-                  }`}
-                  >
+                      }`}
+                    >
                     <span className="font-bold text-xs text-white">Whisper Base</span>
                     <span className="text-[10px] text-slate-400 mt-1.5 leading-tight">دقة أعلى (145 ميجابايت)</span>
                   </button>
                 </div>
-              </div>
 
               {/* Language & Task Select */}
               <div className="grid grid-cols-2 gap-4">
