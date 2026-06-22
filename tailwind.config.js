@@ -8,24 +8,28 @@ module.exports = {
   theme: {
     extend: {
       fontFamily: {
-        sans: ['system-ui', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif'],
+        sans: ['Cairo', 'system-ui', '-apple-system', 'sans-serif'],
       },
       colors: {
         brand: {
           50: '#f5f3ff',
           100: '#ede9fe',
-          500: '#8b5cf6',
-          600: '#7c3aed',
-          900: '#4c1d95',
+          500: '#7c3aed',
+          600: '#6d28d9',
+          700: '#5b21b6',
+          900: '#2e1065',
+          950: '#0f052d'
         },
         neonCyan: '#06b6d4',
         neonTeal: '#14b8a6',
-        darkBg: '#05070f',
-        darkCard: '#0d111d',
+        goldAccent: '#f59e0b',
+        darkBg: '#030712',
+        darkCard: '#0f172a',
       },
       boxShadow: {
-        'neon-glow': '0 0 20px rgba(139, 92, 246, 0.15)',
-        'cyan-glow': '0 0 20px rgba(6, 182, 212, 0.15)',
+        'neon-glow': '0 0 30px rgba(124, 58, 237, 0.25)',
+        'cyan-glow': '0 0 30px rgba(6, 182, 212, 0.25)',
+        'glass-glow': '0 8px 32px 0 rgba(0, 0, 0, 0.37)',
       }
     },
   },
